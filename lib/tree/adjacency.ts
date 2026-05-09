@@ -68,7 +68,11 @@ export function findRoots(persons: Person[], adj: AdjacencyLists): Person[] {
       return !parents || parents.length === 0;
     })
     .sort((a, b) => {
-      // Prefer roots with descendants
+      // Prefer the lowest explicit generation number (1 = founding ancestor)
+      const ag = a.generation ?? Number.POSITIVE_INFINITY;
+      const bg = b.generation ?? Number.POSITIVE_INFINITY;
+      if (ag !== bg) return ag - bg;
+      // Then roots with more descendants
       const ad = adj.childrenByParent.get(a.id)?.length ?? 0;
       const bd = adj.childrenByParent.get(b.id)?.length ?? 0;
       if (ad !== bd) return bd - ad;
