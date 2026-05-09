@@ -1,0 +1,164 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getSupabase, getUser } from "@/lib/supabase/queries";
+import config from "../../config";
+import type { Person, Branch } from "@/types";
+
+export const revalidate = 0;
+
+const GENDER_LABEL: Record<Person["gender"], string> = {
+  male: "Nam",
+  female: "Nữ",
+  other: "—",
+};
+
+/**
+ * Public member detail page. Authenticated users see the full record; guests
+ * see only the columns exposed via persons_public_view (currently identical
+ * to the authenticated read because anon RLS will be tightened in a follow-up
+ * migration). The editor's detail page lives at /bang-dieu-khien/thanh-vien/[id].
+ */
+export default async function PublicPersonDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await getSupabase();
+  const user = await getUser();
+
+  // Anon visitors query the redacted public view; authenticated users see the full record.
+  const personsSource = user ? "persons" : "persons_public_view";
+
+  const [{ data: person }, { data: branches }] = await Promise.all([
+    supabase.from(personsSource).select("*").eq("id", id).single(),
+    supabase.from("branches").select("*"),
+  ]);
+
+  if (!person) notFound();
+
+  const p = person as Person;
+  const branch = ((branches ?? []) as Branch[]).find(
+    (b) => b.id === p.branch_id,
+  );
+
+  return (
+    <main className="min-h-screen px-4 sm:px-6 py-6 sm:py-12 max-w-3xl mx-auto">
+      <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8">
+        <Link
+          href="/cay"
+          className="text-sm py-2"
+          style={{ color: "var(--color-sepia)", minHeight: 32 }}
+        >
+          ← Sơ đồ phả hệ
+        </Link>
+        <Link
+          href="/"
+          className="text-sm font-display py-2"
+          style={{ color: "var(--color-ink)", minHeight: 32 }}
+        >
+          {config.siteName}
+        </Link>
+      </div>
+
+      <header className="mb-8 sm:mb-10">
+        <h1
+          className="font-display font-bold"
+          style={{
+            fontSize: "clamp(2rem, 7vw, 3.5rem)",
+            color: p.is_deceased ? "var(--color-sepia)" : "var(--color-ink)",
+            lineHeight: 1.1,
+            wordBreak: "keep-all",
+          }}
+        >
+          {p.full_name}
+        </h1>
+        {p.other_names && (
+          <p
+            className="font-serif italic mt-2 text-base sm:text-lg"
+            style={{ color: "var(--color-sepia)" }}
+          >
+            {p.other_names}
+          </p>
+        )}
+      </header>
+
+      <div className="divider-rosette mb-6 sm:mb-8 w-full" />
+
+      <section
+        className="p-4 sm:p-6"
+        style={{
+          backgroundColor: "var(--color-ivory)",
+          borderRadius: "var(--radius-card)",
+        }}
+      >
+        {/* Single column on mobile (label above value), two columns on sm+ */}
+        <dl className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-y-3 sm:gap-y-3 text-sm">
+          <Dt>Giới tính</Dt>
+          <Dd>{GENDER_LABEL[p.gender]}</Dd>
+
+          {branch && (
+            <>
+              <Dt>Chi tộc</Dt>
+              <Dd>{branch.name}</Dd>
+            </>
+          )}
+
+          {p.generation != null && (
+            <>
+              <Dt>Thế hệ</Dt>
+              <Dd>{p.generation}</Dd>
+            </>
+          )}
+
+          {p.birth_year && (
+            <>
+              <Dt>Sinh</Dt>
+              <Dd>{p.birth_year}</Dd>
+            </>
+          )}
+
+          {p.is_deceased && p.death_year && (
+            <>
+              <Dt>Mất</Dt>
+              <Dd>{p.death_year}</Dd>
+            </>
+          )}
+
+          {p.is_in_law && (
+            <>
+              <Dt>Ghi nhận</Dt>
+              <Dd>Dâu / rể (kết hôn vào dòng họ)</Dd>
+            </>
+          )}
+        </dl>
+      </section>
+
+      {user && (
+        <div className="mt-8 text-center">
+          <Link
+            href={`/bang-dieu-khien/thanh-vien/${p.id}`}
+            className="inline-block text-sm font-serif px-4 py-2"
+            style={{ color: "var(--color-lacquer)", minHeight: 40 }}
+          >
+            Xem chi tiết & chỉnh sửa →
+          </Link>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function Dt({ children }: { children: React.ReactNode }) {
+  return (
+    <dt
+      className="text-xs sm:text-sm tracking-wider sm:tracking-normal uppercase sm:normal-case"
+      style={{ color: "var(--color-sepia)" }}
+    >
+      {children}
+    </dt>
+  );
+}
+function Dd({ children }: { children: React.ReactNode }) {
+  return <dd className="mb-2 sm:mb-0">{children}</dd>;
+}

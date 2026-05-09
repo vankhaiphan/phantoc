@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Phan Tộc — Lụa & Sơn Mài (Silk & Lacquer) palette
+   See docs/architecture-proposal.md §6 for the full design system.
+───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Fonts (declared as CSS variables in app/layout.tsx via next/font) */
+  --font-display: var(--font-cormorant), "Playfair Display", Georgia, serif;
+  --font-serif:   var(--font-playfair), Georgia, serif;
+  --font-sans:    var(--font-inter), "Helvetica Neue", system-ui, sans-serif;
+
+  /* Heritage palette */
+  --color-ink:             #1A1714;
+  --color-parchment:       #F4ECDC;
+  --color-parchment-warm:  #EAE0CB;
+  --color-lacquer:         #7A1F2C;
+  --color-lacquer-deep:    #4A1119;
+  --color-gold:            #A8843E;
+  --color-sage:            #5C6B4F;
+  --color-sepia:           #8B7355;
+  --color-ivory:           #FBF7EE;
+
+  /* Spacing rhythm (8px base, generous) */
+  --spacing-rhythm-1: 0.5rem;
+  --spacing-rhythm-2: 1rem;
+  --spacing-rhythm-3: 1.5rem;
+  --spacing-rhythm-4: 2.5rem;
+  --spacing-rhythm-5: 4rem;
+  --spacing-rhythm-6: 6.5rem;
+
+  /* Radii — soft, never sharp */
+  --radius-paper: 2px;
+  --radius-card:  6px;
+
+  /* Motion — slow, like turning a page */
+  --ease-page:     cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-page: 600ms;
+  --duration-fade: 280ms;
+}
+
+/* Dark mode — Đêm Trầm (deep night). Reads like an oil lamp, not a code editor. */
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"], :root[data-theme="dark"] {
+    --color-ink:            #EFE6D2;
+    --color-parchment:      #13110E;
+    --color-parchment-warm: #1B1814;
+    --color-lacquer:        #A03B49;
+    --color-ivory:          #1B1814;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Base body
+───────────────────────────────────────────────────────────────────────── */
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Lock to a comfortable scale on iOS Safari but still allow pinch where
+     content opts in (tree gesture surface manages its own zoom). */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-parchment);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  line-height: 1.7;
+  /* Suppress the iOS double-tap-to-zoom delay; deliberate gesture surfaces
+     opt out via touch-action: none on themselves. */
+  touch-action: manipulation;
+  /* Avoid pull-to-refresh fighting with the tree pan gesture. */
+  overscroll-behavior-y: contain;
+}
+
+/* iOS tap-highlight removed — we render our own focus state. */
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Buttons inherit text-size-adjust quirks on iOS; normalise. */
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* Display & headings — generous leading is doctrine */
+.font-display { font-family: var(--font-display); }
+.font-serif   { font-family: var(--font-serif); }
+
+/* Numerics align in tables */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Focus ring — always visible, never outline:none */
+:focus-visible {
+  outline: 2px solid var(--color-lacquer);
+  outline-offset: 2px;
+  border-radius: var(--radius-paper);
+}
+
+/* SVG <g role="button"> can't host an outline reliably across browsers;
+   we render a sibling <rect class="focus-ring"> hidden by default and
+   reveal it when the parent <g> is focused. */
+g[role="button"]:focus { outline: none; }
+g[role="button"]:focus-visible .focus-ring {
+  opacity: 1;
+}
+
+/* Reduced motion — see §6.5; honored across the app */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Utilities — minimal set, expanded as components arrive
+───────────────────────────────────────────────────────────────────────── */
+
+.parchment-grain {
+  /* TODO(textures): replace with /textures/parchment.svg overlay (proposal §6.8) */
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(168, 132, 62, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(122, 31, 44, 0.04) 0%, transparent 50%);
+}
+
+.divider-rosette {
+  /* TODO(textures): swap for the Đông Sơn rosette SVG once designed */
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--color-gold) 30%,
+    var(--color-gold) 70%,
+    transparent 100%
+  );
+  opacity: 0.4;
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(26, 23, 20, 0.18);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(26, 23, 20, 0.28);
+}
