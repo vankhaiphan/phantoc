@@ -8,6 +8,7 @@ const config = {
    */
   foundingChi: {
     name: "Chi Nhì phái IV tộc Phan - làng Cẩm Nê",
+    family: "GĐ ông Phan Học (Hiền)",
     locality: "xã Hòa Tiến, huyện Hòa Vang, thành phố Đà Nẵng",
     country: "Việt Nam",
   },

@@ -103,8 +103,7 @@ export default function HomePage() {
       >
         <div className="divider-rosette mx-auto mb-6 w-24" />
         <p>
-          © {new Date().getFullYear()} {config.foundingChi.name}. Lưu giữ riêng
-          cho dòng họ.
+          © {new Date().getFullYear()} {config.foundingChi.family} - {config.foundingChi.name}. Lưu giữ riêng cho dòng họ.
         </p>
       </footer>
     </main>
