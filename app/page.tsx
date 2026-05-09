@@ -41,7 +41,7 @@ export default function HomePage() {
             className="text-base sm:text-lg leading-relaxed"
             style={{ color: "var(--color-ink)", opacity: 0.86 }}
           >
-            Một gia phả số dành riêng cho{" "}
+            Gia phả số dành riêng cho{" "}
             <span className="font-medium">{config.foundingChi.name}</span>,{" "}
             {config.foundingChi.locality}, {config.foundingChi.country}.
           </p>

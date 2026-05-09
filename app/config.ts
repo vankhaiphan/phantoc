@@ -7,7 +7,7 @@ const config = {
    * Seeded into the `branches` table by supabase/seed.sql.
    */
   foundingChi: {
-    name: "Chi tộc Phan - làng Cẩm Nê",
+    name: "Chi Nhì phái IV tộc Phan - làng Cẩm Nê",
     locality: "xã Hòa Tiến, huyện Hòa Vang, thành phố Đà Nẵng",
     country: "Việt Nam",
   },
