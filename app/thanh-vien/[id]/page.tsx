@@ -10,7 +10,8 @@ import {
   nextSolarOfLunarAnniversary,
   daysBetween,
 } from "@/lib/lunar";
-import type { Person, Branch, Relationship } from "@/types";
+import PhotoGallery from "@/components/features/PhotoGallery";
+import type { Person, Branch, Relationship, PersonPhoto } from "@/types";
 
 export const revalidate = 0;
 
@@ -39,7 +40,7 @@ export default async function PublicPersonDetailPage({
   // Anon visitors query the redacted public view; authenticated users see the full record.
   const personsSource = user ? "persons" : "persons_public_view";
 
-  const [{ data: person }, { data: branches }, { data: relationships }, { data: allRelated }] = await Promise.all([
+  const [{ data: person }, { data: branches }, { data: relationships }, { data: allRelated }, { data: photos }] = await Promise.all([
     supabase.from(personsSource).select("*").eq("id", id).single(),
     supabase.from("branches").select("*"),
     supabase
@@ -47,11 +48,26 @@ export default async function PublicPersonDetailPage({
       .select("*")
       .or(`person_a.eq.${id},person_b.eq.${id}`),
     supabase.from(personsSource).select("id, full_name, gender, is_deceased, generation, birth_order, branch_id, is_in_law"),
+    supabase
+      .from("person_photos")
+      .select("*")
+      .eq("person_id", id)
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: true }),
   ]);
 
   if (!person) notFound();
 
   const p = person as Person;
+  const photoRows = (photos ?? []) as PersonPhoto[];
+
+  // Resolve public storage URLs server-side (same pattern as editor page)
+  const publicUrls: Record<string, string> = {};
+  for (const ph of photoRows) {
+    const { data } = supabase.storage.from("avatars").getPublicUrl(ph.storage_path);
+    publicUrls[ph.storage_path] = data.publicUrl;
+  }
+
   const rels = (relationships ?? []) as Relationship[];
   const personsById = new Map(
     ((allRelated ?? []) as Person[]).map((x) => [x.id, x]),
@@ -263,6 +279,17 @@ export default async function PublicPersonDetailPage({
           </div>
         )}
       </section>
+
+      {photoRows.length > 0 && (
+        <section className="mt-6">
+          <PhotoGallery
+            personId={p.id}
+            photos={photoRows}
+            publicUrls={publicUrls}
+            canEdit={false}
+          />
+        </section>
+      )}
 
       {rels.length > 0 && (
         <section className="mt-6 mb-6">

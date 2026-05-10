@@ -286,6 +286,7 @@ GRANT SELECT ON public.persons_public_view TO authenticated;
 
 GRANT SELECT ON public.branches TO anon;
 GRANT SELECT ON public.relationships TO anon;
+GRANT SELECT ON public.person_photos TO anon;
 
 -- ── Anon RLS policies — required since the view itself bypasses RLS but the
 --    relationships/branches tables are queried directly by the public tree. ──
@@ -349,6 +350,10 @@ CREATE POLICY "Admins manage private details" ON public.person_details_private
   FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ── person_photos ──
+DROP POLICY IF EXISTS "Anon read photos" ON public.person_photos;
+CREATE POLICY "Anon read photos" ON public.person_photos
+  FOR SELECT TO anon USING (TRUE);
+
 DROP POLICY IF EXISTS "Authenticated read photos" ON public.person_photos;
 CREATE POLICY "Authenticated read photos" ON public.person_photos
   FOR SELECT TO authenticated USING (TRUE);
