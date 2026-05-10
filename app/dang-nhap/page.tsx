@@ -30,7 +30,7 @@ export default function LoginPage() {
           }}
         >
           <h1 className="font-serif text-2xl mb-2">Đăng nhập</h1>
-          <p
+          {/* <p
             className="text-sm mb-8"
             style={{ color: "var(--color-sepia)" }}
           >
@@ -44,7 +44,7 @@ export default function LoginPage() {
               hướng dẫn thiết lập
             </Link>
             .
-          </p>
+          </p> */}
 
           <LoginForm />
         </div>
