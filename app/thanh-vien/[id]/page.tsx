@@ -248,6 +248,20 @@ export default async function PublicPersonDetailPage({
             </>
           )}
         </dl>
+
+        {p.note && (
+          <div className="mt-6 pt-6 border-t border-[rgba(26,23,20,0.08)]">
+            <p
+              className="font-serif text-sm mb-2"
+              style={{ color: "var(--color-sepia)" }}
+            >
+              Ghi chú
+            </p>
+            <p className="text-base whitespace-pre-wrap leading-relaxed">
+              {p.note}
+            </p>
+          </div>
+        )}
       </section>
 
       {rels.length > 0 && (
