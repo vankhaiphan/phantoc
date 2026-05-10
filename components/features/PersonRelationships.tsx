@@ -6,12 +6,15 @@ interface PersonRelationshipsProps {
   person: Person;
   relationships: Relationship[];
   personsById: Map<string, Person>;
+  /** When true, hides delete controls and links to the public profile. */
+  readOnly?: boolean;
 }
 
 export default function PersonRelationships({
   person,
   relationships,
   personsById,
+  readOnly = false,
 }: PersonRelationshipsProps) {
   const parents: { rel: Relationship; other: Person }[] = [];
   const children: { rel: Relationship; other: Person }[] = [];
@@ -47,18 +50,21 @@ export default function PersonRelationships({
         empty="Chưa có thông tin cha mẹ."
         items={parents}
         personId={person.id}
+        readOnly={readOnly}
       />
       <RelGroup
         title="Vợ / Chồng"
         empty="Chưa có quan hệ hôn nhân."
         items={spouses}
         personId={person.id}
+        readOnly={readOnly}
       />
       <RelGroup
         title="Con"
         empty="Chưa có thông tin con cái."
         items={children}
         personId={person.id}
+        readOnly={readOnly}
       />
     </div>
   );
@@ -69,12 +75,17 @@ function RelGroup({
   empty,
   items,
   personId,
+  readOnly,
 }: {
   title: string;
   empty: string;
   items: { rel: Relationship; other: Person }[];
   personId: string;
+  readOnly: boolean;
 }) {
+  const linkBase = readOnly
+    ? "/thanh-vien"
+    : "/bang-dieu-khien/thanh-vien";
   return (
     <div>
       <h3
@@ -101,7 +112,7 @@ function RelGroup({
             >
               <div className="min-w-0 flex-1">
                 <Link
-                  href={`/bang-dieu-khien/thanh-vien/${other.id}`}
+                  href={`${linkBase}/${other.id}`}
                   className="font-serif text-base"
                   style={{ color: "var(--color-ink)" }}
                 >
@@ -117,11 +128,13 @@ function RelGroup({
                   {rel.note ? ` · ${rel.note}` : ""}
                 </div>
               </div>
-              <DeleteRelationshipButton
-                id={rel.id}
-                personAId={rel.person_a}
-                personBId={rel.person_b}
-              />
+              {!readOnly && (
+                <DeleteRelationshipButton
+                  id={rel.id}
+                  personAId={rel.person_a}
+                  personBId={rel.person_b}
+                />
+              )}
             </li>
           ))}
         </ul>

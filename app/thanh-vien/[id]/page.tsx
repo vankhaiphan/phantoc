@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabase, getUser } from "@/lib/supabase/queries";
+import PersonRelationships from "@/components/features/PersonRelationships";
 import config from "../../config";
 import {
   formatSolarDate,
@@ -9,7 +10,7 @@ import {
   nextSolarOfLunarAnniversary,
   daysBetween,
 } from "@/lib/lunar";
-import type { Person, Branch } from "@/types";
+import type { Person, Branch, Relationship } from "@/types";
 
 export const revalidate = 0;
 
@@ -38,14 +39,24 @@ export default async function PublicPersonDetailPage({
   // Anon visitors query the redacted public view; authenticated users see the full record.
   const personsSource = user ? "persons" : "persons_public_view";
 
-  const [{ data: person }, { data: branches }] = await Promise.all([
+  const [{ data: person }, { data: branches }, { data: relationships }, { data: allRelated }] = await Promise.all([
     supabase.from(personsSource).select("*").eq("id", id).single(),
     supabase.from("branches").select("*"),
+    supabase
+      .from("relationships")
+      .select("*")
+      .or(`person_a.eq.${id},person_b.eq.${id}`),
+    supabase.from(personsSource).select("id, full_name, gender, is_deceased, generation, birth_order, branch_id, is_in_law"),
   ]);
 
   if (!person) notFound();
 
   const p = person as Person;
+  const rels = (relationships ?? []) as Relationship[];
+  const personsById = new Map(
+    ((allRelated ?? []) as Person[]).map((x) => [x.id, x]),
+  );
+
   const branch = ((branches ?? []) as Branch[]).find(
     (b) => b.id === p.branch_id,
   );
@@ -238,6 +249,25 @@ export default async function PublicPersonDetailPage({
           )}
         </dl>
       </section>
+
+      {rels.length > 0 && (
+        <section className="mt-6 mb-6">
+          <div className="mb-6">
+            <h2
+              className="font-display text-2xl"
+              style={{ color: "var(--color-ink)" }}
+            >
+              Quan hệ
+            </h2>
+          </div>
+          <PersonRelationships
+            person={p}
+            relationships={rels}
+            personsById={personsById}
+            readOnly
+          />
+        </section>
+      )}
 
       {user && (
         <div className="mt-8 text-center">
