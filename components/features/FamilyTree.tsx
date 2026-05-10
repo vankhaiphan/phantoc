@@ -582,7 +582,7 @@ function MobileList({
               className="text-xs tracking-wider uppercase mb-2"
               style={{ color: "var(--color-gold)" }}
             >
-              Thế hệ {group.generation ?? idx + 1}
+              Thế hệ {group.generation}
             </p>
             <ul className="space-y-2">
               {group.entries.map((entry) => (
@@ -612,8 +612,15 @@ interface GenerationGroup {
 
 function groupByGeneration(root: TreeNode): GenerationGroup[] {
   const groups = new Map<number, GroupedEntry[]>();
+
+  // If the root has a known absolute generation, use it as the base offset so
+  // all fallback depths remain meaningful. Otherwise fall back to depth = 0
+  // so the root renders as "Đời 1" (relative depth 1).
+  const rootGeneration = root.person.generation ?? null;
+
   const walk = (node: TreeNode, parentName: string | null, depth: number) => {
-    const gen = node.person.generation ?? depth;
+    // Prefer the stored absolute generation; fall back to root-relative depth.
+    const gen = node.person.generation ?? (rootGeneration != null ? rootGeneration + depth : depth);
     const arr = groups.get(gen) ?? [];
     arr.push({ node, parentName });
     groups.set(gen, arr);
@@ -621,7 +628,7 @@ function groupByGeneration(root: TreeNode): GenerationGroup[] {
       walk(child, node.person.full_name, depth + 1);
     }
   };
-  walk(root, null, 1);
+  walk(root, null, 0);
 
   return [...groups.entries()]
     .sort(([a], [b]) => a - b)
