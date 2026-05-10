@@ -2,6 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabase, getUser } from "@/lib/supabase/queries";
 import config from "../../config";
+import {
+  formatSolarDate,
+  formatLunarDate,
+  solarToLunar,
+  nextSolarOfLunarAnniversary,
+  daysBetween,
+} from "@/lib/lunar";
 import type { Person, Branch } from "@/types";
 
 export const revalidate = 0;
@@ -13,10 +20,11 @@ const GENDER_LABEL: Record<Person["gender"], string> = {
 };
 
 /**
- * Public member detail page. Authenticated users see the full record; guests
- * see only the columns exposed via persons_public_view (currently identical
- * to the authenticated read because anon RLS will be tightened in a follow-up
- * migration). The editor's detail page lives at /bang-dieu-khien/thanh-vien/[id].
+ * Public member detail page. Authenticated users read `persons` directly;
+ * anonymous visitors read `persons_public_view`, which exposes name, gender,
+ * generation, branch, full birth/death dates (solar + lunar) and the in-law
+ * flag. The free-text `note` and the private detail tables stay hidden.
+ * The editor's detail page lives at /bang-dieu-khien/thanh-vien/[id].
  */
 export default async function PublicPersonDetailPage({
   params,
@@ -41,6 +49,46 @@ export default async function PublicPersonDetailPage({
   const branch = ((branches ?? []) as Branch[]).find(
     (b) => b.id === p.branch_id,
   );
+
+  const birthLunar = solarToLunar({
+    year: p.birth_year ?? undefined,
+    month: p.birth_month ?? undefined,
+    day: p.birth_day ?? undefined,
+  });
+
+  const explicitDeathLunar =
+    p.death_lunar_year || p.death_lunar_month || p.death_lunar_day
+      ? {
+          year: p.death_lunar_year ?? undefined,
+          month: p.death_lunar_month ?? undefined,
+          day: p.death_lunar_day ?? undefined,
+          isLeap: false,
+        }
+      : null;
+  const derivedDeathLunar = explicitDeathLunar
+    ? null
+    : solarToLunar({
+        year: p.death_year ?? undefined,
+        month: p.death_month ?? undefined,
+        day: p.death_day ?? undefined,
+      });
+  const deathLunar = explicitDeathLunar ?? derivedDeathLunar;
+
+  let nextGio: {
+    date: { year: number; month: number; day: number };
+    daysAway: number;
+  } | null = null;
+  if (p.is_deceased && deathLunar?.month && deathLunar?.day) {
+    const next = nextSolarOfLunarAnniversary(
+      deathLunar.month,
+      deathLunar.day,
+      new Date(),
+      deathLunar.isLeap ?? false,
+    );
+    if (next) {
+      nextGio = { date: next, daysAway: daysBetween(new Date(), next) };
+    }
+  }
 
   return (
     <main className="min-h-screen px-4 sm:px-6 py-6 sm:py-12 max-w-3xl mx-auto">
@@ -111,17 +159,74 @@ export default async function PublicPersonDetailPage({
             </>
           )}
 
-          {p.birth_year && (
+          {(p.birth_year || p.birth_month || p.birth_day) && (
             <>
               <Dt>Sinh</Dt>
-              <Dd>{p.birth_year}</Dd>
+              <Dd>
+                {formatSolarDate({
+                  year: p.birth_year ?? undefined,
+                  month: p.birth_month ?? undefined,
+                  day: p.birth_day ?? undefined,
+                })}
+              </Dd>
+              {birthLunar && (
+                <>
+                  <Dt>Sinh (âm lịch)</Dt>
+                  <Dd>{formatLunarDate(birthLunar)}</Dd>
+                </>
+              )}
             </>
           )}
 
-          {p.is_deceased && p.death_year && (
+          {p.is_deceased &&
+            (p.death_year || p.death_month || p.death_day) && (
+              <>
+                <Dt>Mất (dương lịch)</Dt>
+                <Dd>
+                  {formatSolarDate({
+                    year: p.death_year ?? undefined,
+                    month: p.death_month ?? undefined,
+                    day: p.death_day ?? undefined,
+                  })}
+                </Dd>
+              </>
+            )}
+
+          {p.is_deceased &&
+            deathLunar &&
+            (deathLunar.year || deathLunar.month || deathLunar.day) && (
+              <>
+                <Dt>Giỗ (âm lịch)</Dt>
+                <Dd>
+                  {formatLunarDate(deathLunar)}
+                  {!explicitDeathLunar && (
+                    <span
+                      className="ml-2 italic text-xs"
+                      style={{ color: "var(--color-sepia)" }}
+                    >
+                      (tự suy ra)
+                    </span>
+                  )}
+                </Dd>
+              </>
+            )}
+
+          {nextGio && (
             <>
-              <Dt>Mất</Dt>
-              <Dd>{p.death_year}</Dd>
+              <Dt>Giỗ tới (dương lịch)</Dt>
+              <Dd>
+                {formatSolarDate(nextGio.date)}
+                <span
+                  className="ml-2 text-xs"
+                  style={{ color: "var(--color-lacquer)" }}
+                >
+                  {nextGio.daysAway === 0
+                    ? "— hôm nay"
+                    : nextGio.daysAway === 1
+                      ? "— ngày mai"
+                      : `— còn ${nextGio.daysAway} ngày`}
+                </span>
+              </Dd>
             </>
           )}
 

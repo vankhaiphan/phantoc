@@ -264,15 +264,18 @@ GRANT EXECUTE ON FUNCTION public.is_editor() TO authenticated;
 
 -- security_invoker = false: the view runs as its owner (postgres), bypassing
 -- the underlying RLS on persons. The view IS the security boundary for anon —
--- it exposes only columns that are safe to publish. Private fields (birth_month,
--- birth_day, death_month, death_day, lunar dates, note) and sensitive relations
--- (person_details_private, person_documents) are excluded by column projection.
+-- it exposes only columns that are safe to publish. Birth & death dates (solar
+-- and lunar) are intentionally exposed: a gia phả's purpose is to publish them.
+-- The free-text `note` field stays private (it can hold sensitive biography),
+-- and so do `person_details_private` and `person_documents`.
 DROP VIEW IF EXISTS public.persons_public_view;
 CREATE VIEW public.persons_public_view
   WITH (security_invoker = false) AS
 SELECT
   id, full_name, other_names, gender,
-  birth_year, death_year,
+  birth_year, birth_month, birth_day,
+  death_year, death_month, death_day,
+  death_lunar_year, death_lunar_month, death_lunar_day,
   is_deceased, is_in_law,
   generation, branch_id, birth_order,
   avatar_url, created_at, updated_at

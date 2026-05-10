@@ -2,6 +2,13 @@ import Link from "next/link";
 import { getUser, getProfile, getSupabase } from "@/lib/supabase/queries";
 import config from "../config";
 import LogoutButton from "./LogoutButton";
+import DataPanel from "@/components/features/DataPanel";
+import {
+  formatSolarDate,
+  solarToLunar,
+  nextSolarOfLunarAnniversary,
+  daysBetween,
+} from "@/lib/lunar";
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "Trưởng tộc (Admin)",
@@ -19,11 +26,63 @@ export default async function DashboardPage() {
   }
 
   const supabase = await getSupabase();
-  const [{ count: memberCount }, { count: relationshipCount }] =
+  const [{ count: memberCount }, { count: relationshipCount }, { data: deceased }] =
     await Promise.all([
       supabase.from("persons").select("*", { count: "exact", head: true }),
       supabase.from("relationships").select("*", { count: "exact", head: true }),
+      supabase
+        .from("persons")
+        .select(
+          "id, full_name, death_year, death_month, death_day, death_lunar_month, death_lunar_day",
+        )
+        .eq("is_deceased", true),
     ]);
+
+  const today = new Date();
+  type GioRow = {
+    id: string;
+    full_name: string;
+    death_year: number | null;
+    death_month: number | null;
+    death_day: number | null;
+    death_lunar_month: number | null;
+    death_lunar_day: number | null;
+  };
+  const upcomingGio = (((deceased ?? []) as GioRow[])
+    .map((d) => {
+      let lunarMonth = d.death_lunar_month ?? null;
+      let lunarDay = d.death_lunar_day ?? null;
+      if (
+        (!lunarMonth || !lunarDay) &&
+        d.death_year &&
+        d.death_month &&
+        d.death_day
+      ) {
+        const derived = solarToLunar({
+          year: d.death_year,
+          month: d.death_month,
+          day: d.death_day,
+        });
+        if (derived) {
+          lunarMonth = derived.month;
+          lunarDay = derived.day;
+        }
+      }
+      if (!lunarMonth || !lunarDay) return null;
+      const next = nextSolarOfLunarAnniversary(
+        lunarMonth,
+        lunarDay,
+        today,
+        false,
+      );
+      if (!next) return null;
+      const daysAway = daysBetween(today, next);
+      if (daysAway < 0 || daysAway > 90) return null;
+      return { id: d.id, name: d.full_name, date: next, daysAway };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null))
+    .sort((a, b) => a.daysAway - b.daysAway)
+    .slice(0, 5);
 
   return (
     <main className="min-h-screen px-6 py-16 max-w-4xl mx-auto">
@@ -87,6 +146,71 @@ export default async function DashboardPage() {
           description="Tìm cách hai người trong họ gọi nhau."
         />
       </section>
+
+      {upcomingGio.length > 0 && (
+        <section
+          className="p-6 mb-10"
+          style={{
+            backgroundColor: "var(--color-ivory)",
+            borderRadius: "var(--radius-card)",
+          }}
+        >
+          <div className="flex items-baseline justify-between gap-3 mb-4">
+            <p className="font-serif text-lg">Giỗ sắp tới</p>
+            <span
+              className="text-xs"
+              style={{ color: "var(--color-sepia)" }}
+            >
+              90 ngày tới
+            </span>
+          </div>
+          <ul className="divide-y divide-[rgba(26,23,20,0.08)]">
+            {upcomingGio.map((g) => (
+              <li
+                key={g.id}
+                className="py-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"
+              >
+                <Link
+                  href={`/bang-dieu-khien/thanh-vien/${g.id}`}
+                  className="font-serif text-base"
+                  style={{ color: "var(--color-ink)" }}
+                >
+                  {g.name}
+                </Link>
+                <span
+                  className="text-sm tabular-nums"
+                  style={{ color: "var(--color-sepia)" }}
+                >
+                  {formatSolarDate(g.date)}
+                  <span
+                    className="ml-2"
+                    style={{ color: "var(--color-lacquer)" }}
+                  >
+                    {g.daysAway === 0
+                      ? "hôm nay"
+                      : g.daysAway === 1
+                        ? "ngày mai"
+                        : `còn ${g.daysAway} ngày`}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {(profile?.role === "editor" || profile?.role === "admin") && (
+        <section
+          className="p-6 mb-10"
+          style={{
+            backgroundColor: "var(--color-ivory)",
+            borderRadius: "var(--radius-card)",
+          }}
+        >
+          <p className="font-serif text-lg mb-4">Xuất / Nhập dữ liệu</p>
+          <DataPanel canImport={profile?.role === "admin"} />
+        </section>
+      )}
 
       <section
         className="p-6"
