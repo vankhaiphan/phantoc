@@ -67,6 +67,18 @@ export default function HomePage() {
               Mở gia phả
             </Link>
             <Link
+              href="/gio"
+              className="inline-flex items-center justify-center px-6 py-3 font-serif text-base transition-all duration-300"
+              style={{
+                color: "var(--color-ink)",
+                border: "1px solid rgba(26,23,20,0.18)",
+                borderRadius: "var(--radius-paper)",
+                minHeight: 48,
+              }}
+            >
+              Giỗ sắp tới
+            </Link>
+            <Link
               href="/danh-xung"
               className="inline-flex items-center justify-center px-6 py-3 font-serif text-base transition-all duration-300"
               style={{
