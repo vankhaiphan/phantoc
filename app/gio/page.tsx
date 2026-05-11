@@ -196,10 +196,10 @@ export default async function GioPage() {
 
                       {/* Row 2 — dates */}
                       <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm tabular-nums">
-                        <span style={{ color: "var(--color-sepia)" }}>
+                        {/* <span style={{ color: "var(--color-sepia)" }}>
                           <span className="opacity-60 text-xs mr-1">Dương lịch:</span>
                           {formatSolarDate(g.date)}
-                        </span>
+                        </span> */}
                         {g.lunarDisplay && (
                           <span style={{ color: "var(--color-sepia)" }}>
                             <span className="opacity-60 text-xs mr-1">Âm lịch:</span>
