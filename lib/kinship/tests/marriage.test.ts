@@ -79,6 +79,26 @@ describe("kinship — marriage and in-law relations", () => {
     expect(r!.bCallsA).toBe("Chị em dâu");
   });
 
+  it("Thím — Khải gọi vợ của Chú là Thím; Thím gọi Khải là Cháu", () => {
+    // Ông → Bố (anh cả) → Khải
+    // Ông → Chú (em)    → (married) Thím
+    const ong = person("ong", "Ông", "male");
+    const bo = person("bo", "Bố", "male", { birth_order: 1 });
+    const chu = person("chu", "Chú", "male", { birth_order: 2 });
+    const khai = person("khai", "Khải", "male");
+    const thim = person("thim", "Thím", "female");
+    const persons = [ong, bo, chu, khai, thim];
+    const rels = [
+      child("ong", "bo"),
+      child("ong", "chu"),
+      child("bo", "khai"),
+      marriage("chu", "thim"),
+    ];
+    const r = computeKinship(khai, thim, persons, rels);
+    expect(r!.aCallsB).toBe("Thím");
+    expect(r!.bCallsA).toBe("Cháu");
+  });
+
   it("anh rể — wife's older brother (her side) calls husband Em rể", () => {
     // Older-brother (anh) marries wife. From wife's husband perspective: anh of wife = anh vợ.
     // From anh's perspective: husband is em rể.

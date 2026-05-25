@@ -298,7 +298,7 @@ export function wrapThroughASpouse(
   } else if (res.bCallsA === "Anh họ") {
     bCallsA = "Chị dâu (họ)";
   } else if (res.bCallsA === "Chú") {
-    bCallsA = "Cô"; // wife of uncle = aunt
+    bCallsA = "Thím"; // vợ của Chú = Thím (không phải Cô — Cô là chị/em gái ruột của Bố)
   } else if (res.bCallsA === "Chú họ") {
     bCallsA = "Thím họ";
   } else if (res.bCallsA === "Cô") {
@@ -341,7 +341,7 @@ export function wrapThroughBSpouse(
     aCallsB = bGender === "male" ? "Em rể" : "Em dâu";
     if (res.aCallsB.includes("họ")) aCallsB += " (họ)";
   } else if (res.aCallsB === "Chú") {
-    aCallsB = "Cô";
+    aCallsB = "Thím"; // vợ của Chú = Thím
   } else if (res.aCallsB === "Chú họ") {
     aCallsB = "Thím họ";
   } else if (res.aCallsB === "Cô") {
