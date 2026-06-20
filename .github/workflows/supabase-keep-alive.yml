@@ -2,8 +2,8 @@ name: Supabase Keep-Alive
 
 on:
   schedule:
-    # Every 3 days at 06:00 UTC — well within the 7-day inactivity window
-    - cron: '0 6 */3 * *'
+    # Every 2 days at 06:00 UTC — comfortable buffer under the 7-day inactivity window
+    - cron: '0 6 */2 * *'
   workflow_dispatch:
 
 jobs:
